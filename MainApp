@@ -1,0 +1,105 @@
+1 Comment:                                 ######################## Copyright © 2010 by Genpact Digital. $ All Rights Reserved ########################
+2	Comment: ######################## This Robot belongs to RA Team. A written permission is required before any kind of use/change. ########################
+3	Comment:      ######################## SAP Login Function ########################
+4	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Config To $V_FolderPath_Config$
+5	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Errors To $V_FolderPath_Errors$
+6	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Logs To $V_FolderPath_Logs$
+7	Variable Operation: \\divsfs001.beerdivision.africa.gcn.local\CitrixPublic$\RapidAutomation\AB_PTP_IP_SA\Dev\Temp To $V_FolderPath_Temp$
+8	Variable Operation: $AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\IPFoldersLocation.txt To $V_File_FAFoldersLocation$
+9	Comment: INITIALIZING AND CHECKING ALL THE REQUIRED VARIABLE AND FILE\FOLDERS=START===========================
+10	Read From Text File: "$V_File_FAFoldersLocation$" Delimiter: 'NewLine' Header: 'No' Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'FAFoldersLocationSession'
+11	Start Loop "Each row in a CSV/Text file of Session: FAFoldersLocationSession"
+12	     If $Filedata Column(1)$ Includes "V_FolderPath_Config" Then  
+13	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Config="; After: "[ENTER]" and assign output to $V_FolderPath_Config$
+14	     End If
+15	     If $Filedata Column(1)$ Includes "V_FolderPath_Error" Then  
+16	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Error="; After: "[ENTER]" and assign output to $V_FolderPath_Errors$
+17	     End If
+18	     If $Filedata Column(1)$ Includes "V_FolderPath_Input" Then  
+19	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Input="; After: "[ENTER]" and assign output to $V_FolderPath_Input$
+20	     End If
+21	     If $Filedata Column(1)$ Includes "V_FolderPath_Temp" Then  
+22	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Temp="; After: "[ENTER]" and assign output to $V_FolderPath_Temp$
+23	     End If
+24	     If $Filedata Column(1)$ Includes "V_FolderPath_Logs" Then  
+25	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Logs="; After: "[ENTER]" and assign output to $V_FolderPath_Logs$
+26	     End If
+27	     If $Filedata Column(1)$ Includes "V_FolderPath_Output" Then  
+28	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Output="; After: "[ENTER]" and assign output to $V_FolderPath_Output$
+29	     End If
+30	     If $Filedata Column(1)$ Includes "V_FolderPath_Macro" Then  
+31	          String Operation: Before-After "$Filedata Column(1)$"; Before: "V_FolderPath_Macro="; After: "[ENTER]" and assign output to $V_FolderPath_Macro$
+32	     End If
+33	End Loop
+34	Comment: ========================== Read Email Address From Config Folder ===========================
+35	Read From Text File: "$V_FolderPath_Config$\MailDetails.txt" Delimiter: 'NewLine' Header: 'No' Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'EmailIds'
+36	Start Loop "Each row in a CSV/Text file of Session: EmailIds"
+37	     If $Filedata Column(1)$ Includes "SendResultTo" Then  
+38	          String Operation: Before-After "$Filedata Column(1)$"; Before: "SendResultTo="; After: "[ENTER]" and assign output to $V_Email_SendResultTo$
+39	     End If
+40	     If $Filedata Column(1)$ Includes "SendErrorTo" Then  
+41	          String Operation: Before-After "$Filedata Column(1)$"; Before: "SendErrorTo="; After: "[ENTER]" and assign output to $V_Email_SendErrorTo$
+42	     End If
+43	     If $Filedata Column(1)$ Includes "SendExceptionTo" Then  
+44	          String Operation: Before-After "$Filedata Column(1)$"; Before: "SendExceptionTo="; After: "[ENTER]" and assign output to $V_Email_SendExceptionTo$
+45	     End If
+46	End Loop
+47	Begin Error Handling; Action: Stop Task; Options: Take Snapshot, Send Email,  Task Status: Fail
+48	     Variable Operation: True To $Flag_TaskStatus$
+49	     Variable Operation: $V_FolderPath_Logs$\Logs_$Day$_$Month$_$Year$.txt To $V_File_Logs$
+50	     Variable Operation: $V_FolderPath_Temp$\ErrorDetails.txt To $V_File_ErrorDetails$
+51	     Send Email: Subject "PTP-Invoice Processing Robot has Started" 
+52	     Comment: ######################## Login SAP **** OPEN T-CODE=START ########################
+53	     If Window Does Not Exist ("* SAP NetWeaver Portal *")  Then  
+54	          Run Task "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\SapLogin.atmx" @Repeat: Do Not Repeat @Speed: Normal Speed @Pass Variable as argument: Do Not Pass variable
+55	          Activate Window: "* SAP NetWeaver Portal *"
+56	          Log to File: SUCCESS:opening  window - SAP Easy Access  SAB SAP R/3 System in "$V_File_Logs$"
+57	          Loop While Window Does Not Exist ("SAP Easy Access  SAB SAP R/3 System")  Then 
+58	          Keystrokes: [CTRL DOWN]n[CTRL UP] in "*SAP NetWeaver Portal*"
+59	          Wait for Window to Open ("SAP Easy Access  SAB SAP R/3 System") (Wait up to 5 seconds - For Window to Open)
+60	          End Loop
+61	     End If
+62	     Log to File: SUCCESS:opening window - Create Asset:  Initial screen in "$V_File_Logs$"
+63	     Maximize Window: "SAP Easy Access  SAB SAP R/3 System"
+64	     Activate Window: "SAP Easy Access  SAB SAP R/3 System"
+65	     Comment: ######################## Pull ZMIR6 Report ########################
+66	     If File Does Not Exist ("$V_FolderPath_Input$\ZMIR6Report_$Day$_$Month$_$Year$_$Hour$_$Minute$.xlsx")  Then  
+67	          Run Script "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\RunZMIR6Report.vbs"
+68	          Comment: ######################## Save Report in "Input" Folder ########################
+69	          Run Script "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\SaveExcelFile.vbs $V_FolderPath_Input$\ZMIR6Report_$Day$_$Month$_$Year$_$Hour$_$Minute$.xlsx"
+70	     End If
+71	     Comment: ######################## Store OCR File Data into DataBase Table=PTP_IP_OCR_Data ########################
+72	     Run Task "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\PTP-IP-OCR_Data_UploadToServer.atmx" @Repeat: Do Not Repeat @Speed: Normal Speed @Pass Variable as argument: $V_ConnectionString$; $V_File_FAFoldersLocation$; $V_File_Logs$; $V_FolderPath_Errors$; $V_FolderPath_Input$; $V_FolderPath_Logs$; $V_Quantity$; $V_Query$
+73	     Comment: ######################## Get Header Text For Doc from SAP ########################
+74	     Excel: Open Spreadsheet "$V_FolderPath_Macro$\PTP-IP-MACRO.xlsm". ActiveSheet: "Default". Session: PTP-IP-Macro
+75	     Excel: Run Excel Macro "RobotRun"  Session: PTP-IP-Macro
+76	     Excel: Close Spreadsheet. Session: PTP-IP-Macro
+77	     Wait for Window to Close ("*PTP-IP-MACRO*") (Wait up to 5 seconds - For Window to Close)
+78	     Close Window: "*SAP NetWeaver Portal*"
+79	     Close Window: "SAP Logon 740"
+80	     Copy Files "$V_FolderPath_Macro$\PTP-IP-MACRO.xlsm" to "$V_FolderPath_Output$\PTP-IP-Result_$Day$_$Month$_$Year$_$Hour$_$Minute$.xlsm"  
+81	     Send Email: Subject "PTP-Invoice Processing Robot has Completed" 
+82	End Error Handling
+83	Run Script "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\GetHeaderText.vbs 5203074510, $V_HeaderText$"
+84	String Operation: Extract substring from "$V_HeaderText$" and assign output to $V_Doc_Number$
+85	String Operation: Replace "$V_Doc_Number$|" with "" in "$V_HeaderText$" and assign output to $V_HeaderText$ 
+86	Comment: ######################## Get PO Number From  OCR Data ########################
+87	Connect to "$V_ConnectionString$" Session:'MySqlDb'
+88	Execute SQL Statement: 'SELECT PO_Number FROM PTP_IP_OCR_Data WHERE Savvion_ID = '$V_HeaderText$' AND PO_Number <> ''', Export data to CSV file '$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\SQLDataOutPut.csv' Session:'MySqlDb'
+89	Disconnect from database Session:'MySqlDb'
+90	Read From CSV file: "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\SQLDataOutPut.csv" Delimiter: "Comma" Header: "No" Trim Leading Space: "No" Trim Trailing Space: "No" Session: 'Default'
+91	Start Loop "Each row in a CSV/Text file of Session: Default"
+92	Variable Operation: $Filedata Column(1)$ To $V_PO_Number$
+93	Exit Loop
+94	End Loop
+95	Comment: ######################## Get Other Details for the Case from SAP ########################
+96	Run Script "$AAApplicationPath$\Automation Anywhere\My Tasks\PTP_IP\GetCaseDetails.vbs 4503510827, $V_SAP_CaseOutPut$"
+97	String Operation: Split "$V_SAP_CaseOutPut$" with delimiter "~" and assign output to $V_SAP_CaseOutPut_List$
+98	Start Loop "List Variable $V_SAP_CaseOutPut_List$" 
+99	Comment: Please enter your commands to loop.
+100	Message Box: "$V_SAP_CaseOutPut_List$"
+101	End Loop
+102	Start Loop "100" Times 
+103	If $V_SAP_CaseOutPut_List$ Includes $V_PO_Number$ Then  
+104	End If
+105	End Loop
